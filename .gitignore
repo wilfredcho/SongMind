@@ -99,6 +99,10 @@ venv.bak/
 
 # mkdocs documentation
 /site
+/.DS_Store
+/Music
+/Copy
+/config
 
 # mypy
 .mypy_cache/

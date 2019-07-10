@@ -1,0 +1,15 @@
+lastFM:
+    api_key: dsa
+genius:
+    user_token: dsa
+discogs:
+    user_token: dsa
+paths:
+    input: path
+    output: path
+
+logs:
+    path: path
+    topic:
+         - info
+         - error
