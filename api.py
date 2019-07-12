@@ -22,6 +22,18 @@ class Singleton(type):
         return cls._instances[cls]
 
 
+class Counter(metaclass=Singleton):
+    def __init__(self, count):
+        self.count = count
+    
+    @property
+    def count(self):
+        return self.__count
+    
+    @count.setter
+    def count(self, value):
+        self.__count = value
+
 class Spotify(metaclass=Singleton):
     def __init__(self, cfg):
         self.spotify = spotipy.Spotify(
@@ -56,9 +68,9 @@ class LastFm(metaclass=Singleton):
             except pylast.WSError as e:
                 return [Genre(e.details, 0)]
             except pylast.MalformedResponseError:
-                time.sleep(3)
+                time.sleep(1)
             except pylast.NetworkError:
-                time.sleep(3)
+                time.sleep(1)
             finally:
                 tries += 1
                 if tries == MAX_TRIES - 1:

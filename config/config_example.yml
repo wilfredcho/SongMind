@@ -1,4 +1,4 @@
-multithread: false
+multithread: true
 lastFM:
     api_key: dsa
 genius:

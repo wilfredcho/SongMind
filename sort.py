@@ -11,7 +11,7 @@ import langdetect
 import numpy as np
 from tqdm import tqdm
 
-from api import Genius, LangClassifier, LastFm
+from api import Counter, Genius, LangClassifier, LastFm
 from common.logger import getLogger, start_logger
 from config.configuration import Configuration
 from song import Genre, SongInfo
@@ -26,6 +26,7 @@ lastfm = LastFm(cfg)
 genius = Genius(cfg)
 language = LangClassifier()
 
+counter = Counter(0)
 
 def song_condit(song):
     if song is not None:
@@ -47,6 +48,7 @@ def duplicate_files(copy_path, song_info, dup):
             duplicate_files(copy_path + '_' + str(dup+1), song_info, dup+1)
         else:
             info_log.info("Remove Identitcal File")
+            counter.count += 1
     else:
         copy(song_info.filename, copy_path)
 
@@ -71,10 +73,11 @@ def process(MULTI=False):
     #jobs = map(lambda x: os.path.basename(str(x)), jobs)
     outputs = [os.path.basename(output) for output in outputs]
     #outputs = map(lambda x: os.path.basename(str(x)), outputs)
-    if len(jobs) == len(outputs):
+    if len(jobs) == (len(outputs) + counter.count):
         print("Success")
     else:
         print(len(set(jobs)) - len(set(outputs)))
+        print(counter.count)
         print(set(jobs) - set(outputs))
         print("Failed")
 
