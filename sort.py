@@ -83,7 +83,7 @@ def process(MULTI=False):
 
 
 def multithreading(func, jobs):
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=int(cfg['workers'])) as executor:
         future_job = (executor.submit(
             func, job) for job in jobs)
         for future in tqdm(concurrent.futures.as_completed(future_job), total=len(jobs), unit="job"):

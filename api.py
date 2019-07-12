@@ -54,14 +54,14 @@ class LastFm(metaclass=Singleton):
 
     def __init__(self, cfg):
         self.lasffm = pylast.LastFMNetwork(api_key=cfg["lastFM"]["api_key"])
+        self._max_tries = int(cfg['tries'])
 
     @sleep_and_retry
     @limits(calls=4, period=1)
     def get_genre(self, artist, title):
         info = self.lasffm.get_track(artist, title)
-        MAX_TRIES = 10
         tries = 0
-        while tries < MAX_TRIES:
+        while tries < self._max_tries:
             try:
                 genre = info.get_top_tags()
                 break
@@ -73,7 +73,7 @@ class LastFm(metaclass=Singleton):
                 time.sleep(1)
             finally:
                 tries += 1
-                if tries == MAX_TRIES - 1:
+                if tries == self._max_tries - 1:
                     break
         weight_median = np.median([int(gen.weight) for gen in genre])
 
@@ -86,19 +86,19 @@ class Genius(metaclass=Singleton):
 
     def __init__(self, cfg):
         self.genius = lyricsgenius.Genius(cfg["genius"]["user_token"])
+        self._max_tries = int(cfg['tries'])
 
     def get_lyrics(self, title, artist):
-        MAX_TRIES = 10
         tries = 0
-        while tries < MAX_TRIES:
+        while tries < self._max_tries:
             try:
                 song = self.genius.search_song(title, artist)
                 break
             except requests.exceptions.ReadTimeout:
                 tries += 1
-                if tries == MAX_TRIES - 1:
+                if tries == self._max_tries - 1:
                     break
-                time.sleep(3)
+                time.sleep(1)
 
         if song is not None:
             return song.lyrics
