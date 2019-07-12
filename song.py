@@ -1,3 +1,6 @@
+from operator import attrgetter
+
+
 class Genre(object):
 
     def __init__(self, genre, weight):
@@ -61,4 +64,5 @@ class SongInfo(object):
 
     @property
     def max_genre(self):
-        return max(self.genre, key=lambda x: x.weight)
+        return max(self.genre, key=attrgetter('weight'))
+        # return max(self.genre, key=lambda x: x.weight)

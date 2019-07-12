@@ -4,8 +4,10 @@ import lyricsgenius
 import numpy as np
 import pylast
 import requests
+import spotipy
 from langdetect import detect
 from ratelimit import limits, sleep_and_retry
+from spotipy.oauth2 import SpotifyClientCredentials
 
 from song import Genre
 
@@ -20,6 +22,16 @@ class Singleton(type):
         return cls._instances[cls]
 
 
+class Spotify(metaclass=Singleton):
+    def __init__(self, cfg):
+        self.spotify = spotipy.Spotify(
+            SpotifyClientCredentials(
+                client_id=cfg["spotify"]["client_id"],
+                client_secret=cfg["spotify"]["client_secret"]
+            )
+        )
+
+
 class LangClassifier(object):
 
     def detect(self, txt):
@@ -29,33 +41,33 @@ class LangClassifier(object):
 class LastFm(metaclass=Singleton):
 
     def __init__(self, cfg):
-        self.network = pylast.LastFMNetwork(api_key=cfg["lastFM"]["api_key"])
+        self.lasffm = pylast.LastFMNetwork(api_key=cfg["lastFM"]["api_key"])
 
     @sleep_and_retry
     @limits(calls=4, period=1)
     def get_genre(self, artist, title):
-        def map_weight(genre):
-            return (int(genre.weight))
-
-        def map_genre(genre):
-            return (Genre(genre.item.get_name(), int(genre.weight)))
-        info = self.network.get_track(artist, title)
+        info = self.lasffm.get_track(artist, title)
         MAX_TRIES = 10
         tries = 0
         while tries < MAX_TRIES:
             try:
                 genre = info.get_top_tags()
+                break
             except pylast.WSError as e:
                 return [Genre(e.details, 0)]
+            except pylast.MalformedResponseError:
+                time.sleep(3)
             except pylast.NetworkError:
+                time.sleep(3)
+            finally:
                 tries += 1
                 if tries == MAX_TRIES - 1:
                     break
-                time.sleep(1)
-                continue
-        weight_median = np.median(list(map(map_weight, genre)))
-        genre_array = list(map(map_genre, genre))
-        return list(filter(lambda x: x.weight > weight_median, genre_array))
+        weight_median = np.median([int(gen.weight) for gen in genre])
+
+        genre_array = (Genre(gen.item.get_name(), int(gen.weight))
+                       for gen in genre)
+        return [gen for gen in genre_array if gen.weight > weight_median]
 
 
 class Genius(metaclass=Singleton):
@@ -74,8 +86,7 @@ class Genius(metaclass=Singleton):
                 tries += 1
                 if tries == MAX_TRIES - 1:
                     break
-                time.sleep(1)
-                continue
+                time.sleep(3)
 
         if song is not None:
             return song.lyrics
