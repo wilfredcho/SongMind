@@ -16,4 +16,8 @@ logs:
     topic:
          - info
          - error
+    size: 5242880
+    backup: 100
 split: ' ft. | feat. | ft | feat_ | \(|'
+workers: 8
+tries: 10
