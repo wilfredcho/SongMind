@@ -1,0 +1,19 @@
+multithread: true
+lastFM:
+    api_key: dsa
+genius:
+    user_token: dsa
+discogs:
+    user_token: dsa
+spotify:
+    client_id: das
+    client_secret: das
+paths:
+    input: ~/Work/SongMind/Music/
+    output: ./Copy/
+logs:
+    path: ./
+    topic:
+         - info
+         - error
+split: ' ft. | feat. | ft | feat_ | \(|'
