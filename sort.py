@@ -116,8 +116,7 @@ def get_info(filename):
             finally:
                 lang = lang_from_lyrics(song, lang)
             if lang == language.english:
-                genre = lastfm.get_genre(
-                    song.tag.artist, base_title)
+                genre = lastfm.get_genre(song.tag.artist, base_title)
             else:
                 genre = [Genre(lang, 0)]
             if genre:

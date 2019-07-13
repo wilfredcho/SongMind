@@ -5,6 +5,7 @@ import numpy as np
 import pylast
 import requests
 import spotipy
+import polyglot
 from polyglot.detect import Detector
 from ratelimit import limits, sleep_and_retry
 from spotipy.oauth2 import SpotifyClientCredentials
