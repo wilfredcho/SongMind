@@ -7,8 +7,8 @@ from pathlib import Path
 from shutil import copy
 
 import eyed3
-import langdetect
 import numpy as np
+import polyglot
 from tqdm import tqdm
 
 from api import Counter, Genius, LangClassifier, LastFm
@@ -27,6 +27,7 @@ genius = Genius(cfg)
 language = LangClassifier()
 
 counter = Counter(0)
+
 
 def song_condit(song):
     if song is not None:
@@ -83,7 +84,7 @@ def process(MULTI=False):
 
 
 def multithreading(func, jobs):
-    with concurrent.futures.ThreadPoolExecutor(max_workers=int(cfg['workers'])) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=int(cfg['multithread']['workers'])) as executor:
         future_job = (executor.submit(
             func, job) for job in jobs)
         for future in tqdm(concurrent.futures.as_completed(future_job), total=len(jobs), unit="job"):
@@ -91,27 +92,32 @@ def multithreading(func, jobs):
             copy_file(song_info)
 
 
+def lang_from_lyrics(song, lang):
+    title = song.tag.title
+    if lang == language.english:
+        lyrics = genius.get_lyrics(title, song.tag.artist)
+        if lyrics != '':
+            lang = language.detect(lyrics)
+            return lang
+    return lang
+
+
 def get_info(filename):
     try:
         song = eyed3.load(str(filename))
         if song_condit(song):
+            base_title = re.split(cfg['split'], song.tag.title)[0].strip()
+            alpha_title = ''.join(
+                char for char in base_title if not char.isdigit()).strip()
             try:
-                lang = language.detect(song.tag.title)
-            except langdetect.lang_detect_exception.LangDetectException:
-                return SongInfo(None,
-                                None,
-                                str(filename),
-                                [Genre('Untitled', 0)],
-                                None,
-                                None)
-            title = re.split(cfg['split'], song.tag.title)[0]
-            if lang == 'en':
-                lyrics = genius.get_lyrics(title, song.tag.artist)
-                if lyrics != '':
-                    lang = language.detect(lyrics)
-            if lang == 'en':
+                lang = language.detect(alpha_title)
+            except polyglot.detect.base.UnknownLanguage:
+                lang = language.english
+            finally:
+                lang = lang_from_lyrics(song, lang)
+            if lang == language.english:
                 genre = lastfm.get_genre(
-                    song.tag.artist, title)
+                    song.tag.artist, base_title)
             else:
                 genre = [Genre(lang, 0)]
             if genre:
@@ -137,7 +143,8 @@ def get_info(filename):
                             [Genre(lang, 0)],
                             None,
                             None)
-        except langdetect.lang_detect_exception.LangDetectException:
+        except Exception as e:
+            error_log.exception("Line 145, File: " + str(filename))
             return SongInfo(None,
                             None,
                             str(filename),
@@ -145,7 +152,7 @@ def get_info(filename):
                             None,
                             None)
     except Exception as e:
-        error_log.exception("File: " + str(filename))
+        error_log.exception("Line 153, File: " + str(filename))
         return SongInfo(None,
                         None,
                         str(filename),
@@ -164,4 +171,4 @@ def my_song_list(path):
 
 
 if __name__ == "__main__":
-    process(cfg['multithread'])
+    process(cfg['multithread']['status'])

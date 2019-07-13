@@ -5,7 +5,7 @@ import numpy as np
 import pylast
 import requests
 import spotipy
-from langdetect import detect
+from polyglot.detect import Detector
 from ratelimit import limits, sleep_and_retry
 from spotipy.oauth2 import SpotifyClientCredentials
 
@@ -25,14 +25,15 @@ class Singleton(type):
 class Counter(metaclass=Singleton):
     def __init__(self, count):
         self.count = count
-    
+
     @property
     def count(self):
         return self.__count
-    
+
     @count.setter
     def count(self, value):
         self.__count = value
+
 
 class Spotify(metaclass=Singleton):
     def __init__(self, cfg):
@@ -44,10 +45,15 @@ class Spotify(metaclass=Singleton):
         )
 
 
-class LangClassifier(object):
+class LangClassifier(metaclass=Singleton):
 
     def detect(self, txt):
-        return detect(txt)
+        detector = Detector(txt)
+        return detector.language.name
+
+    @property
+    def english(self):
+        return self.detect("This is English, Can I BE more clear?")
 
 
 class LastFm(metaclass=Singleton):
