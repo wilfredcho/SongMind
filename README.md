@@ -3,8 +3,7 @@
 
 ## HOW TO USE?
 
-- git clone and install docker.
-- open terminal and cd to this repo.
+- git clone and cd to this repo.
 - edit `config/config.yml` per your preference.
 - run `python sort.py` in the current directory.
 
@@ -18,7 +17,7 @@
 
 - Check error.log log and info.log for more details.
 
-## Requirement?
+## Requirement
 
 1. Install python
 2. Install packages in the requirement.txt
