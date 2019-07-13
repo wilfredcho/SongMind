@@ -54,6 +54,10 @@ class LangClassifier(metaclass=Singleton):
     @property
     def english(self):
         return self.detect("This is English, Can I BE more clear?")
+    
+    @property
+    def error(self):
+        return polyglot.detect.base.UnknownLanguage
 
 
 class LastFm(metaclass=Singleton):

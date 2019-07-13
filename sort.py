@@ -108,10 +108,10 @@ def get_info(filename):
         if song_condit(song):
             base_title = re.split(cfg['split'], song.tag.title)[0].strip()
             alpha_title = ''.join(
-                char for char in base_title if not char.isdigit()).strip()
+                char for char in base_title if char.isalpha() or char == ' ').strip()
             try:
                 lang = language.detect(alpha_title)
-            except polyglot.detect.base.UnknownLanguage:
+            except language.error:
                 lang = language.english
             finally:
                 lang = lang_from_lyrics(song, lang)
@@ -156,7 +156,7 @@ def get_info(filename):
         return SongInfo(None,
                         None,
                         str(filename),
-                        [Genre('Error', 0)],
+                        [Genre(str(e), 0)],
                         None,
                         None)
 
