@@ -1,13 +1,15 @@
-multithread: true
+multithread:
+    status: true
+    workers: 8
 lastFM:
-    api_key: dsa
+    api_key: 
 genius:
-    user_token: dsa
+    user_token: 
 discogs:
-    user_token: dsa
+    user_token: 
 spotify:
-    client_id: das
-    client_secret: das
+    client_id: 
+    client_secret: 
 paths:
     input: ~/Work/SongMind/Music/
     output: ./Copy/
@@ -18,6 +20,5 @@ logs:
          - error
     size: 5242880
     backup: 100
-split: ' ft. | feat. | ft | feat_ | \(|'
-workers: 8
+split: ' ft. | feat. | ft | feat_ | \('
 tries: 10
