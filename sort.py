@@ -48,7 +48,7 @@ def duplicate_files(copy_path, song_info, dup):
                 dup = 0
             duplicate_files(copy_path + '_' + str(dup+1), song_info, dup+1)
         else:
-            info_log.info("Remove Identitcal File")
+            info_log.info("Remove Identitcal File: " + str(song_info.filename))
             counter.count += 1
     else:
         copy(song_info.filename, copy_path)
@@ -71,9 +71,7 @@ def process(MULTI=False):
 
     outputs = my_song_list(cfg['paths']['output'])
     jobs = [os.path.basename(job) for job in jobs]
-    #jobs = map(lambda x: os.path.basename(str(x)), jobs)
     outputs = [os.path.basename(output) for output in outputs]
-    #outputs = map(lambda x: os.path.basename(str(x)), outputs)
     if len(jobs) == (len(outputs) + counter.count):
         print("Success")
     else:
@@ -142,7 +140,7 @@ def get_info(filename):
                             [Genre(lang, 0)],
                             None,
                             None)
-        except Exception as e:
+        except language.error:
             error_log.exception("Line 145, File: " + str(filename))
             return SongInfo(None,
                             None,
@@ -164,8 +162,6 @@ def my_song_list(path):
     jobs = list(Path(path).glob('**/*.*'))
     file_jobs = [job for job in jobs
                  if isfile(job) and os.path.basename(job).split('.')[0] != '']
-    # file_jobs = filter(lambda x: isfile(
-    #    x) and os.path.basename(x).split('.')[0] != '', jobs)
     return file_jobs
 
 

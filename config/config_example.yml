@@ -22,3 +22,29 @@ logs:
     backup: 100
 split: ' ft. | feat. | ft | feat_ | \('
 tries: 10
+genre:
+    main:
+        - 60s
+        - 70s
+        - 80s
+        - alternative
+        - blues
+        - christian
+        - country
+        - dance
+        - deep house
+        - easy listening
+        - electronic
+        - folk
+        - funk
+        - hip hop
+        - jazz
+        - indie
+        - metal
+        - pop
+        - punk
+        - r&b
+        - rap
+        - reggae
+        - rock
+        - soul
