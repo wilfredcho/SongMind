@@ -9,18 +9,10 @@ import polyglot
 from polyglot.detect import Detector
 from ratelimit import limits, sleep_and_retry
 from spotipy.oauth2 import SpotifyClientCredentials
+from common.singleton import Singleton
 
 from song import Genre
 
-
-class Singleton(type):
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(
-                Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
 
 
 class Counter(metaclass=Singleton):
@@ -68,7 +60,7 @@ class LastFm(metaclass=Singleton):
         self._max_tries = int(cfg['tries'])
 
     @sleep_and_retry
-    @limits(calls=4, period=1)
+    @limits(calls=5, period=1)
     def get_genre(self, artist, title):
         info = self.lasffm.get_track(artist, title)
         tries = 0

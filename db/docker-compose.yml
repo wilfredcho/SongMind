@@ -1,0 +1,16 @@
+version: '3.7'
+
+services:
+  db:
+    build: .
+    image: postgres
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    privileged: true
+    environment:
+      POSTGRES_DB: songmind
+      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: admin
+    volumes:
+      - ./tmp/db:/var/lib/postgresql/data

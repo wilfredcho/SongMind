@@ -1,5 +1,6 @@
 from operator import attrgetter
-
+from config.configuration import Configuration 
+cfg = Configuration().cfg
 
 class Genre(object):
 
@@ -64,5 +65,7 @@ class SongInfo(object):
 
     @property
     def max_genre(self):
+        match = [genre for genre in self.genre if genre.genre in cfg['genre']['main']]
+        if match:
+            return max(match, key=attrgetter('weight'))
         return max(self.genre, key=attrgetter('weight'))
-        # return max(self.genre, key=lambda x: x.weight)

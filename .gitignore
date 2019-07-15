@@ -99,10 +99,13 @@ venv.bak/
 
 # mkdocs documentation
 /site
+
+# mypy
+.mypy_cache/
+
+# SongMind
 /.DS_Store
 /Music
 /Copy
 /config
-
-# mypy
-.mypy_cache/
+/db/tmp/

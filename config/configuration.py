@@ -1,7 +1,7 @@
 import yaml
+from common.singleton import Singleton
 
-
-class Configuration(object):
+class Configuration(metaclass=Singleton):
 
     def __init__(self):
         with open("./config/config.yml", 'r') as ymlfile:
