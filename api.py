@@ -30,13 +30,24 @@ class Counter(metaclass=Singleton):
 
 class Spotify(metaclass=Singleton):
     def __init__(self, cfg):
-        self.spotify = spotipy.Spotify(
+        self.spotify = spotipy.Spotify(client_credentials_manager=
             SpotifyClientCredentials(
                 client_id=cfg["spotify"]["client_id"],
                 client_secret=cfg["spotify"]["client_secret"]
             )
         )
+    
+    def search_track(self, track, artist):
+        return self.spotify.search(q='artist:' + artist + ' track:' + track, type='track') #data['tracks']['items']
 
+    def audio_analysis(self, id):
+        return self.spotify.audio_analysis(id)
+
+    def audio_features(self, id):
+        return self.spotify.audio_features([id])
+    
+    def related_artists(self, id):
+        return self.spotify.artist_related_artists(id)
 
 class LangClassifier(metaclass=Singleton):
 
@@ -70,19 +81,19 @@ class LastFm(metaclass=Singleton):
                 break
             except pylast.WSError as e:
                 return [Genre(e.details, 0)]
-            except pylast.MalformedResponseError:
-                time.sleep(1)
-            except pylast.NetworkError:
-                time.sleep(1)
-            finally:
+            except pylast.MalformedResponseError as e:
                 tries += 1
                 if tries == self._max_tries - 1:
-                    break
-        weight_median = np.median([int(gen.weight) for gen in genre])
-
+                    return [Genre(str(e), 0)]
+                time.sleep(1)
+            except pylast.NetworkError as e:
+                tries += 1
+                if tries == self._max_tries - 1:
+                    return [Genre(str(e), 0)]
+                time.sleep(1)
         genre_array = (Genre(gen.item.get_name(), int(gen.weight))
                        for gen in genre)
-        return [gen for gen in genre_array if gen.weight > weight_median]
+        return [gen for gen in genre_array]
 
 
 class Genius(metaclass=Singleton):
@@ -91,28 +102,30 @@ class Genius(metaclass=Singleton):
         self.genius = lyricsgenius.Genius(cfg["genius"]["user_token"])
         self._max_tries = int(cfg['tries'])
 
-    def get_lyrics(self, title, artist):
+    @sleep_and_retry
+    @limits(calls=5, period=1)
+    def get_song(self, title, artist):
         tries = 0
         while tries < self._max_tries:
             try:
                 song = self.genius.search_song(title, artist)
-                break
+                return song
             except requests.exceptions.ReadTimeout:
                 tries += 1
                 if tries == self._max_tries - 1:
-                    break
+                    return None
                 time.sleep(1)
+                
 
-        if song is not None:
-            return song.lyrics
         """
         if song is not None:
             song.artist
             song.title
             song.year
             song.featured_artists
+            song.media
         """
-        return ''
+    
 
 
 """

@@ -93,9 +93,9 @@ def multithreading(func, jobs):
 def lang_from_lyrics(song, lang):
     title = song.tag.title
     if lang == language.english:
-        lyrics = genius.get_lyrics(title, song.tag.artist)
-        if lyrics != '':
-            lang = language.detect(lyrics)
+        song = genius.get_song(title, song.tag.artist)
+        if song is not None:
+            lang = language.detect(song.lyrics)
             return lang
     return lang
 
