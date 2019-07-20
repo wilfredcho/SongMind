@@ -2,17 +2,16 @@ import time
 
 import lyricsgenius
 import numpy as np
+import polyglot
 import pylast
 import requests
 import spotipy
-import polyglot
 from polyglot.detect import Detector
 from ratelimit import limits, sleep_and_retry
 from spotipy.oauth2 import SpotifyClientCredentials
+
 from common.singleton import Singleton
-
 from song import Genre
-
 
 
 class Counter(metaclass=Singleton):
@@ -30,24 +29,41 @@ class Counter(metaclass=Singleton):
 
 class Spotify(metaclass=Singleton):
     def __init__(self, cfg):
-        self.spotify = spotipy.Spotify(client_credentials_manager=
-            SpotifyClientCredentials(
-                client_id=cfg["spotify"]["client_id"],
-                client_secret=cfg["spotify"]["client_secret"]
-            )
+        self.spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials(
+            client_id=cfg["spotify"]["client_id"],
+            client_secret=cfg["spotify"]["client_secret"]
         )
-    
+        )
+
+    @limits(calls=5, period=1)
+    def get_track(self, track_id):
+        return self.spotify.track(track_id)
+
+    @limits(calls=5, period=1)
+    def get_artist(self, artist_id):
+        return self.spotify.artist(artist_id)
+
+    @limits(calls=5, period=1)
     def search_track(self, track, artist):
-        return self.spotify.search(q='artist:' + artist + ' track:' + track, type='track') #data['tracks']['items']
+        # data['tracks']['items']
+        return self.spotify.search(q='artist:' + artist + ' track:' + track, type='track')
 
-    def audio_analysis(self, id):
-        return self.spotify.audio_analysis(id)
+    @limits(calls=5, period=1)
+    def search_artist(self, artist):
+        return self.spotify.search(q='artist:' + artist, type='artist')
 
-    def audio_features(self, id):
-        return self.spotify.audio_features([id])
-    
-    def related_artists(self, id):
-        return self.spotify.artist_related_artists(id)
+    @limits(calls=5, period=1)
+    def audio_analysis(self, track_id):
+        return self.spotify.audio_analysis(track_id)
+
+    @limits(calls=5, period=1)
+    def audio_features(self, track_id):
+        return self.spotify.audio_features([track_id])
+
+    @limits(calls=5, period=1)
+    def related_artists(self, track_id):
+        return self.spotify.artist_related_artists(track_id)
+
 
 class LangClassifier(metaclass=Singleton):
 
@@ -58,7 +74,7 @@ class LangClassifier(metaclass=Singleton):
     @property
     def english(self):
         return self.detect("This is English, Can I BE more clear?")
-    
+
     @property
     def error(self):
         return polyglot.detect.base.UnknownLanguage
@@ -93,7 +109,7 @@ class LastFm(metaclass=Singleton):
                 time.sleep(1)
         genre_array = (Genre(gen.item.get_name(), int(gen.weight))
                        for gen in genre)
-        return [gen for gen in genre_array]
+        return [gen for gen in genre_array]  # [0].genre == 'Track not found'
 
 
 class Genius(metaclass=Singleton):
@@ -115,7 +131,6 @@ class Genius(metaclass=Singleton):
                 if tries == self._max_tries - 1:
                     return None
                 time.sleep(1)
-                
 
         """
         if song is not None:
@@ -125,7 +140,6 @@ class Genius(metaclass=Singleton):
             song.featured_artists
             song.media
         """
-    
 
 
 """

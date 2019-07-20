@@ -11,7 +11,7 @@ import numpy as np
 import polyglot
 from tqdm import tqdm
 
-from api import Counter, Genius, LangClassifier, LastFm
+from api import Counter, Genius, LangClassifier, LastFm, Spotify
 from common.logger import getLogger, start_logger
 from config.configuration import Configuration
 from song import Genre, SongInfo
@@ -24,6 +24,7 @@ cfg = Configuration().cfg
 
 lastfm = LastFm(cfg)
 genius = Genius(cfg)
+spotify = Spotify(cfg)
 language = LangClassifier()
 
 counter = Counter(0)
@@ -90,54 +91,73 @@ def multithreading(func, jobs):
             copy_file(song_info)
 
 
-def lang_from_lyrics(song, lang):
+def details_from_lyrics(song, lang):
     title = song.tag.title
     if lang == language.english:
-        song = genius.get_song(title, song.tag.artist)
-        if song is not None:
-            lang = language.detect(song.lyrics)
-            return lang
-    return lang
+        details = genius.get_song(title, song.tag.artist)
+        return details
+    return None
+
+
+def get_language(song):
+    base_title = re.split(cfg['split'], song.tag.title)[0].strip()
+    alpha_title = ''.join(
+        char for char in base_title if char.isalpha() or char == ' ').strip()
+    try:
+        lang = language.detect(alpha_title)
+    except language.error:
+        lang = language.english
+    finally:
+        details = details_from_lyrics(song, lang)
+        if details is not None:
+            lang = language.detect(details.lyrics)
+    return base_title, details, lang
+
+
+def get_genre(song, base_title, details, lang):
+    if lang == language.english:
+        genre = lastfm.get_genre(song.tag.artist, base_title)
+        if genre:
+            if genre[0].genre == 'Track not found' and details is not None:
+                spotify_data = [
+                    data for data in details.media if data['provider'] == 'spotify']
+                if spotify_data:
+                    spotify_data = spotify_data[0]
+                    track = spotify.get_track(spotify_data['native_uri'])
+                    artist = spotify.get_artist(track['artists'][0]['uri'])
+                    genres = artist['genres']
+                    if genres:
+                        return [Genre(genres[0], 0)]
+                else:
+                    artist = spotify.search_artist(song.tag.artist)
+                    if artist['artists']['items']:
+                        genres = artist['artists']['items'][0]['genres']
+                        if genres:
+                            return [Genre(genres[0], 0)]
+            else:
+                return genre
+    return [Genre(lang, 0)]
 
 
 def get_info(filename):
     try:
         song = eyed3.load(str(filename))
         if song_condit(song):
-            base_title = re.split(cfg['split'], song.tag.title)[0].strip()
-            alpha_title = ''.join(
-                char for char in base_title if char.isalpha() or char == ' ').strip()
-            try:
-                lang = language.detect(alpha_title)
-            except language.error:
-                lang = language.english
-            finally:
-                lang = lang_from_lyrics(song, lang)
-            if lang == language.english:
-                genre = lastfm.get_genre(song.tag.artist, base_title)
-            else:
-                genre = [Genre(lang, 0)]
-            if genre:
-                return SongInfo(song.tag.artist,
-                                song.tag.title,
-                                str(filename),
-                                genre,
-                                None,
-                                None)
-            else:
-                return SongInfo(None,
-                                None,
-                                str(filename),
-                                [Genre(lang, 0)],
-                                None,
-                                None)
-        fileinfo = os.path.basename(filename).split('.mp3')[0]
+            base_title, details, lang = get_language(song)
+            genre = get_genre(song, base_title, details, lang)
+            return SongInfo(song.tag.artist,
+                            song.tag.title,
+                            str(filename),
+                            genre,
+                            None,
+                            None)
         try:
-            lang = language.detect(fileinfo)
+            #fileinfo = os.path.basename(filename).split('.mp3')[0]
+            #lang = language.detect(fileinfo)
             return SongInfo(None,
                             None,
                             str(filename),
-                            [Genre(lang, 0)],
+                            [Genre("Check Failed", 0)],
                             None,
                             None)
         except language.error:

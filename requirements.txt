@@ -15,20 +15,20 @@ lyricsgenius == 1.5.2
 # sort.py: 10
 numpy == 1.16.4
 
-# api.py: 8,9
+# api.py: 5,9
 # sort.py: 11
 polyglot == 16.7.4
 
-# api.py: 5
+# api.py: 6
 pylast == 3.1.0
 
 # api.py: 10
 ratelimit == 2.2.1
 
-# api.py: 6
+# api.py: 7
 requests == 2.22.0
 
-# api.py: 7,11
+# api.py: 8,11
 spotipy == 2.4.4
 
 # sort.py: 12

@@ -1,6 +1,9 @@
 from operator import attrgetter
-from config.configuration import Configuration 
+
+from config.configuration import Configuration
+
 cfg = Configuration().cfg
+
 
 class Genre(object):
 

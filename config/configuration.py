@@ -1,5 +1,7 @@
 import yaml
+
 from common.singleton import Singleton
+
 
 class Configuration(metaclass=Singleton):
 
