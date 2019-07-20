@@ -2,17 +2,16 @@ import time
 
 import lyricsgenius
 import numpy as np
+import polyglot
 import pylast
 import requests
 import spotipy
-import polyglot
 from polyglot.detect import Detector
 from ratelimit import limits, sleep_and_retry
 from spotipy.oauth2 import SpotifyClientCredentials
+
 from common.singleton import Singleton
-
 from song import Genre
-
 
 
 class Counter(metaclass=Singleton):
@@ -30,12 +29,40 @@ class Counter(metaclass=Singleton):
 
 class Spotify(metaclass=Singleton):
     def __init__(self, cfg):
-        self.spotify = spotipy.Spotify(
-            SpotifyClientCredentials(
-                client_id=cfg["spotify"]["client_id"],
-                client_secret=cfg["spotify"]["client_secret"]
-            )
+        self.spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials(
+            client_id=cfg["spotify"]["client_id"],
+            client_secret=cfg["spotify"]["client_secret"]
         )
+        )
+
+    @limits(calls=5, period=1)
+    def get_track(self, track_id):
+        return self.spotify.track(track_id)
+
+    @limits(calls=5, period=1)
+    def get_artist(self, artist_id):
+        return self.spotify.artist(artist_id)
+
+    @limits(calls=5, period=1)
+    def search_track(self, track, artist):
+        # data['tracks']['items']
+        return self.spotify.search(q='artist:' + artist + ' track:' + track, type='track')
+
+    @limits(calls=5, period=1)
+    def search_artist(self, artist):
+        return self.spotify.search(q='artist:' + artist, type='artist')
+
+    @limits(calls=5, period=1)
+    def audio_analysis(self, track_id):
+        return self.spotify.audio_analysis(track_id)
+
+    @limits(calls=5, period=1)
+    def audio_features(self, track_id):
+        return self.spotify.audio_features([track_id])
+
+    @limits(calls=5, period=1)
+    def related_artists(self, track_id):
+        return self.spotify.artist_related_artists(track_id)
 
 
 class LangClassifier(metaclass=Singleton):
@@ -47,7 +74,7 @@ class LangClassifier(metaclass=Singleton):
     @property
     def english(self):
         return self.detect("This is English, Can I BE more clear?")
-    
+
     @property
     def error(self):
         return polyglot.detect.base.UnknownLanguage
@@ -70,19 +97,19 @@ class LastFm(metaclass=Singleton):
                 break
             except pylast.WSError as e:
                 return [Genre(e.details, 0)]
-            except pylast.MalformedResponseError:
-                time.sleep(1)
-            except pylast.NetworkError:
-                time.sleep(1)
-            finally:
+            except pylast.MalformedResponseError as e:
                 tries += 1
                 if tries == self._max_tries - 1:
-                    break
-        weight_median = np.median([int(gen.weight) for gen in genre])
-
+                    return [Genre(str(e), 0)]
+                time.sleep(1)
+            except pylast.NetworkError as e:
+                tries += 1
+                if tries == self._max_tries - 1:
+                    return [Genre(str(e), 0)]
+                time.sleep(1)
         genre_array = (Genre(gen.item.get_name(), int(gen.weight))
                        for gen in genre)
-        return [gen for gen in genre_array if gen.weight > weight_median]
+        return [gen for gen in genre_array]  # [0].genre == 'Track not found'
 
 
 class Genius(metaclass=Singleton):
@@ -91,28 +118,28 @@ class Genius(metaclass=Singleton):
         self.genius = lyricsgenius.Genius(cfg["genius"]["user_token"])
         self._max_tries = int(cfg['tries'])
 
-    def get_lyrics(self, title, artist):
+    @sleep_and_retry
+    @limits(calls=5, period=1)
+    def get_song(self, title, artist):
         tries = 0
         while tries < self._max_tries:
             try:
                 song = self.genius.search_song(title, artist)
-                break
+                return song
             except requests.exceptions.ReadTimeout:
                 tries += 1
                 if tries == self._max_tries - 1:
-                    break
+                    return None
                 time.sleep(1)
 
-        if song is not None:
-            return song.lyrics
         """
         if song is not None:
             song.artist
             song.title
             song.year
             song.featured_artists
+            song.media
         """
-        return ''
 
 
 """

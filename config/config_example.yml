@@ -11,7 +11,7 @@ spotify:
     client_id: 
     client_secret: 
 paths:
-    input: ~/Work/SongMind/Music/
+    input: /Users/wilfredcho/Work/SongMind/Music/
     output: ./Copy/
 logs:
     path: ./
@@ -20,13 +20,14 @@ logs:
          - error
     size: 5242880
     backup: 100
-split: ' ft. | feat. | ft | feat_ | \('
+split: ' ft. | feat. | ft | feat_ | \[| \('
 tries: 10
 genre:
     main:
         - 60s
         - 70s
         - 80s
+        - acoustic
         - alternative
         - blues
         - christian
@@ -38,13 +39,15 @@ genre:
         - folk
         - funk
         - hip hop
-        - jazz
         - indie
+        - jazz
         - metal
         - pop
         - punk
-        - r&b
         - rap
         - reggae
+        - r&b
+        - rnb
         - rock
         - soul
+        - trap
