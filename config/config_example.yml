@@ -1,6 +1,6 @@
 multithread:
     status: true
-    workers: 8
+    workers: 16
 lastFM:
     api_key: 
 genius:
@@ -10,6 +10,8 @@ discogs:
 spotify:
     client_id: 
     client_secret: 
+detectlanguage:
+    api_key: 
 paths:
     input: /Users/wilfredcho/Work/SongMind/Music/
     output: ./Copy/
@@ -23,16 +25,27 @@ logs:
 split: ' ft. | feat. | ft | feat_ | \[| \('
 tries: 10
 genre:
+    match_ratio: 85
     main:
+        - 00s
         - 60s
         - 70s
         - 80s
+        - 90s
+        - 2000s
         - acoustic
+        - acoustic pop
         - alternative
+        - alternative pop
+        - alternative r&b
+        - alternative rock
+        - australian pop
         - blues
         - christian
+        - classical
         - country
         - dance
+        - disney
         - deep house
         - easy listening
         - electronic
@@ -40,9 +53,13 @@ genre:
         - funk
         - hip hop
         - indie
+        - indie rock
         - jazz
         - metal
+        - oldies
+        - party
         - pop
+        - pop rock
         - punk
         - rap
         - reggae

@@ -1,11 +1,14 @@
+import json
 import time
 
+import detectlanguage
 import lyricsgenius
 import numpy as np
 import polyglot
 import pylast
 import requests
 import spotipy
+from googletrans import Translator
 from polyglot.detect import Detector
 from ratelimit import limits, sleep_and_retry
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -67,13 +70,44 @@ class Spotify(metaclass=Singleton):
 
 class LangClassifier(metaclass=Singleton):
 
+    def __init__(self, cfg):
+        self.__english = ['en', 'english']
+        self._max_tries = int(cfg['tries'])
+        detectlanguage.configuration.api_key = cfg['detectlanguage']['api_key']
+
     def detect(self, txt):
-        detector = Detector(txt)
-        return detector.language.name
+        txt = ''.join(char for char in txt if char.isalpha() or char == " ")
+        if txt != "":
+            try:
+                detector = Detector(txt)
+                lang = detector.language.name
+            except polyglot.detect.base.UnknownLanguage:
+                lang = self.translate(txt)
+            return lang
+        else:
+            raise ValueError
+
+    @sleep_and_retry
+    @limits(calls=1, period=3)
+    def translate(self, txt):
+        tries = 0
+        while tries < self._max_tries:
+            google_translator = Translator()
+            try:
+                return google_translator.detect(txt).lang
+            except json.decoder.JSONDecodeError as e:
+                tries += 1
+                if tries == self._max_tries - 1:
+                    langs = detectlanguage.detect(txt)
+                    if langs:
+                        return langs[0]['language']
+                    else:
+                        return "Unknown Language"
+                time.sleep(1)
 
     @property
     def english(self):
-        return self.detect("This is English, Can I BE more clear?")
+        return self.__english
 
     @property
     def error(self):
@@ -121,12 +155,16 @@ class Genius(metaclass=Singleton):
     @sleep_and_retry
     @limits(calls=5, period=1)
     def get_song(self, title, artist):
+        if title is None or artist is None:
+            return None
+        if title == "" or artist == "":
+            return None
         tries = 0
         while tries < self._max_tries:
             try:
                 song = self.genius.search_song(title, artist)
                 return song
-            except requests.exceptions.ReadTimeout:
+            except Exception:
                 tries += 1
                 if tries == self._max_tries - 1:
                     return None

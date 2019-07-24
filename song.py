@@ -1,5 +1,8 @@
 from operator import attrgetter
 
+from fuzzywuzzy import fuzz
+
+from common.util import fuzzy_match
 from config.configuration import Configuration
 
 cfg = Configuration().cfg
@@ -68,7 +71,11 @@ class SongInfo(object):
 
     @property
     def max_genre(self):
-        match = [genre for genre in self.genre if genre.genre in cfg['genre']['main']]
+        match = []
+        for genre in self.genre:
+            for preset in cfg['genre']['main']:
+                if fuzzy_match(genre.genre.lower(), preset):
+                    match.append(genre)
         if match:
             return max(match, key=attrgetter('weight'))
         return max(self.genre, key=attrgetter('weight'))

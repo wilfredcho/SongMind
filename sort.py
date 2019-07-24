@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 from api import Counter, Genius, LangClassifier, LastFm, Spotify
 from common.logger import getLogger, start_logger
+from common.util import fuzzy_match
 from config.configuration import Configuration
 from song import Genre, SongInfo
 
@@ -25,7 +26,7 @@ cfg = Configuration().cfg
 lastfm = LastFm(cfg)
 genius = Genius(cfg)
 spotify = Spotify(cfg)
-language = LangClassifier()
+language = LangClassifier(cfg)
 
 counter = Counter(0)
 
@@ -56,13 +57,12 @@ def duplicate_files(copy_path, song_info, dup):
 
 
 def copy_file(song_info):
-    copy_path = cfg['paths']['output']+song_info.max_genre.genre+"/"
+    copy_path = cfg['paths']['output']+song_info.max_genre.genre.lower()+"/"
     duplicate_files(copy_path, song_info, '')
 
 
 def process(MULTI=False):
     jobs = my_song_list(cfg['paths']['input'])
-
     if MULTI:
         multithreading(get_info, jobs)
     else:
@@ -91,34 +91,37 @@ def multithreading(func, jobs):
             copy_file(song_info)
 
 
-def details_from_lyrics(song, lang):
+def details_from_lyrics(song):
     title = song.tag.title
-    if lang == language.english:
-        details = genius.get_song(title, song.tag.artist)
-        return details
-    return None
+    base_title = re.split(cfg['split'], song.tag.title)[0].strip()
+    details = genius.get_song(base_title, song.tag.artist)
+    return details
 
 
 def get_language(song):
+    def find_lang(details, alpha_title):
+        if details is not None:
+            try:
+                return language.detect(details.lyrics)
+            except Exception:
+                return language.detect(alpha_title)
+        return language.detect(alpha_title)
+    details = details_from_lyrics(song)
     base_title = re.split(cfg['split'], song.tag.title)[0].strip()
     alpha_title = ''.join(
         char for char in base_title if char.isalpha() or char == ' ').strip()
     try:
-        lang = language.detect(alpha_title)
-    except language.error:
-        lang = language.english
-    finally:
-        details = details_from_lyrics(song, lang)
-        if details is not None:
-            lang = language.detect(details.lyrics)
+        lang = find_lang(details, alpha_title)
+    except ValueError as e:
+        raise Exception('Title is not valid') from e
     return base_title, details, lang
 
 
 def get_genre(song, base_title, details, lang):
-    if lang == language.english:
+    if lang.lower() in language.english:
         genre = lastfm.get_genre(song.tag.artist, base_title)
         if genre:
-            if genre[0].genre == 'Track not found' and details is not None:
+            if genre[0].genre == 'Track not found'.lower() and details is not None:
                 spotify_data = [
                     data for data in details.media if data['provider'] == 'spotify']
                 if spotify_data:
@@ -135,7 +138,22 @@ def get_genre(song, base_title, details, lang):
                         if genres:
                             return [Genre(genres[0], 0)]
             else:
-                return genre
+                clean_genre = []
+                for gen in genre:
+                    for my_gen in cfg['genre']['main']:
+                        if fuzzy_match(gen.genre, my_gen):
+                            clean_genre.append(gen)
+                if not clean_genre:
+                    data = spotify.search_artist(song.tag.artist)
+                    if data['artists']['total'] == 0:
+                        clean_genre = [Genre(lang, 0)]
+                    else:
+                        genres = data['artists']['items'][0]['genres']
+                        if genres:
+                            clean_genre = [Genre(genres[0], 0)]
+                        else:
+                            clean_genre = [Genre(lang, 0)]
+                return clean_genre
     return [Genre(lang, 0)]
 
 
@@ -151,25 +169,14 @@ def get_info(filename):
                             genre,
                             None,
                             None)
-        try:
-            #fileinfo = os.path.basename(filename).split('.mp3')[0]
-            #lang = language.detect(fileinfo)
-            return SongInfo(None,
-                            None,
-                            str(filename),
-                            [Genre("Check Failed", 0)],
-                            None,
-                            None)
-        except language.error:
-            error_log.exception("Line 145, File: " + str(filename))
-            return SongInfo(None,
-                            None,
-                            str(filename),
-                            [Genre('Untitled', 0)],
-                            None,
-                            None)
+        return SongInfo(None,
+                        None,
+                        str(filename),
+                        [Genre("Check Failed", 0)],
+                        None,
+                        None)
     except Exception as e:
-        error_log.exception("Line 153, File: " + str(filename))
+        error_log.exception(str(filename))
         return SongInfo(None,
                         None,
                         str(filename),

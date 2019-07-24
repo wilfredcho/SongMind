@@ -5,30 +5,40 @@
 # config/configuration.py: 1
 PyYAML == 5.1.1
 
+# api.py: 4
+detectlanguage == 1.3.0
+
 # sort.py: 9
 eyeD3 == 0.8.10
 
-# api.py: 3
+# common/util.py: 1
+# song.py: 3
+fuzzywuzzy == 0.17.0
+
+# api.py: 11
+googletrans == 2.4.0
+
+# api.py: 5
 lyricsgenius == 1.5.2
 
-# api.py: 4
+# api.py: 6
 # sort.py: 10
 numpy == 1.16.4
 
-# api.py: 5,9
+# api.py: 7,12
 # sort.py: 11
 polyglot == 16.7.4
 
-# api.py: 6
+# api.py: 8
 pylast == 3.1.0
 
-# api.py: 10
+# api.py: 13
 ratelimit == 2.2.1
 
-# api.py: 7
+# api.py: 9
 requests == 2.22.0
 
-# api.py: 8,11
+# api.py: 10,14
 spotipy == 2.4.4
 
 # sort.py: 12
