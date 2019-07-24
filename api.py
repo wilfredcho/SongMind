@@ -80,7 +80,10 @@ class LangClassifier(metaclass=Singleton):
         if txt != "":
             try:
                 detector = Detector(txt)
-                lang = detector.language.name
+                if detector.reliable:
+                    lang = detector.language.name
+                else:
+                    raise polyglot.detect.base.UnknownLanguage
             except polyglot.detect.base.UnknownLanguage:
                 lang = self.translate(txt)
             return lang
@@ -88,7 +91,7 @@ class LangClassifier(metaclass=Singleton):
             raise ValueError
 
     @sleep_and_retry
-    @limits(calls=1, period=3)
+    @limits(calls=1, period=1)
     def translate(self, txt):
         tries = 0
         while tries < self._max_tries:
