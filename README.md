@@ -26,7 +26,8 @@ This is a project to organize local copies of mp3.
 
 1. Install python
 2. Install packages in the requirement.txt
+3. You will need to get the keys for each of the apis in the config/config.yml. They are all free to use.
 
 ## Known Issues:
-1. Language is classified using polyglot. While it works pretty well most of the time, it does misclassify songs.
-2. Genres are defined using the LastFM API. Tags are not standardized and one might see unexpected genres.
+1. Language is classified using polyglot, google translate, and detectlanguage. While it works pretty well most of the time, it is not guaranteed to work perfectly.
+2. Genres are defined using the LastFM API and Spotify API. Tags are not standardized and one might see unexpected genres.
