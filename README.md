@@ -2,7 +2,7 @@
 
 ## What is SongMind?
 This is a project to organize local copies of mp3.
-1. It sorts a user's music into different folders by language or genre.
+1. It sorts a user's music into different folders by languages and by genre if the language is English.
 2. It collects data related to the songs in those folders and stores them in a database.
 3. It analyzes what makes these songs appeal to the users.
 
