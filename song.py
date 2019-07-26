@@ -1,7 +1,5 @@
 from operator import attrgetter
 
-from fuzzywuzzy import fuzz
-
 from common.util import fuzzy_match
 from config.configuration import Configuration
 

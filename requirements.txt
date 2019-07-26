@@ -12,33 +12,28 @@ detectlanguage == 1.3.0
 eyeD3 == 0.8.10
 
 # common/util.py: 1
-# song.py: 3
 fuzzywuzzy == 0.17.0
 
-# api.py: 11
+# api.py: 9
 googletrans == 2.4.0
 
 # api.py: 5
 lyricsgenius == 1.5.2
 
-# api.py: 6
 # sort.py: 10
 numpy == 1.16.4
 
-# api.py: 7,12
+# api.py: 6,10
 # sort.py: 11
 polyglot == 16.7.4
 
-# api.py: 8
+# api.py: 7
 pylast == 3.1.0
 
-# api.py: 13
+# api.py: 11
 ratelimit == 2.2.1
 
-# api.py: 9
-requests == 2.22.0
-
-# api.py: 10,14
+# api.py: 8,12
 spotipy == 2.4.4
 
 # sort.py: 12

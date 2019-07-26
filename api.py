@@ -3,10 +3,8 @@ import time
 
 import detectlanguage
 import lyricsgenius
-import numpy as np
 import polyglot
 import pylast
-import requests
 import spotipy
 from googletrans import Translator
 from polyglot.detect import Detector
@@ -38,31 +36,38 @@ class Spotify(metaclass=Singleton):
         )
         )
 
+    @sleep_and_retry
     @limits(calls=5, period=1)
     def get_track(self, track_id):
         return self.spotify.track(track_id)
 
+    @sleep_and_retry
     @limits(calls=5, period=1)
     def get_artist(self, artist_id):
         return self.spotify.artist(artist_id)
 
+    @sleep_and_retry
     @limits(calls=5, period=1)
     def search_track(self, track, artist):
         # data['tracks']['items']
         return self.spotify.search(q='artist:' + artist + ' track:' + track, type='track')
 
+    @sleep_and_retry
     @limits(calls=5, period=1)
     def search_artist(self, artist):
         return self.spotify.search(q='artist:' + artist, type='artist')
 
+    @sleep_and_retry
     @limits(calls=5, period=1)
     def audio_analysis(self, track_id):
         return self.spotify.audio_analysis(track_id)
 
+    @sleep_and_retry
     @limits(calls=5, period=1)
     def audio_features(self, track_id):
         return self.spotify.audio_features([track_id])
 
+    @sleep_and_retry
     @limits(calls=5, period=1)
     def related_artists(self, track_id):
         return self.spotify.artist_related_artists(track_id)
@@ -181,11 +186,3 @@ class Genius(metaclass=Singleton):
             song.featured_artists
             song.media
         """
-
-
-"""
-d = discogs_client.Client('ExampleApplication/0.1', user_token=cfg["discogs"]["user_token"])
-results = d.search('Stockholm By Night', type='release')
-artist = results[0].artists[0]
-print(artist.name)
-"""

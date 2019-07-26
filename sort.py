@@ -1,6 +1,7 @@
 import concurrent.futures
 import os
 import re
+import shutil
 from filecmp import cmp
 from os.path import isfile
 from pathlib import Path
@@ -74,12 +75,12 @@ def process(MULTI=False):
     jobs = [os.path.basename(job) for job in jobs]
     outputs = [os.path.basename(output) for output in outputs]
     if len(jobs) == (len(outputs) + counter.count):
-        print("Success")
+        info_log.info("Process Successful")
     else:
-        print(len(set(jobs)) - len(set(outputs)))
-        print(counter.count)
-        print(set(jobs) - set(outputs))
-        print("Failed")
+        info_log.info("Process Failed: ")
+        info_log.info("Duplicates: " + str(counter.count))
+        info_log.info("Difference: " + str(set(jobs) - set(outputs)))
+        info_log.info("Duplicates: " + str(counter.count))
 
 
 def multithreading(func, jobs):
@@ -192,5 +193,39 @@ def my_song_list(path):
     return file_jobs
 
 
+def move_dir(source_folder, dest):
+    files = os.listdir(source_folder)
+    os.makedirs(os.path.dirname(source_folder)+'/'+dest, exist_ok=True)
+    for f in files:
+        dest_name = os.path.dirname(source_folder)+'/'+dest+'/'+f
+        while True:
+            i = 0
+            if os.path.exists(dest_name):
+                dest_name = os.path.splitext(
+                    dest_name)[0] + str(i) + os.path.splitext(dest_name)[1]
+                i += 1
+            else:
+                shutil.move(source_folder+'/'+f, dest_name)
+                break
+
+
+def merge(cfg):
+    num_songs = len(my_song_list(cfg['paths']['output']))
+    folders = list(filter(os.path.isdir, [
+                   cfg['paths']['output'] + path for path in os.listdir(cfg['paths']['output'])]))
+    genre_map = cfg['genre']['pair']
+    for source_folder in folders:
+        genre = os.path.basename(source_folder)
+        if genre in genre_map.keys():
+            move_dir(source_folder, genre_map[genre])
+            os.rmdir(os.path.dirname(source_folder)+'/'+genre)
+
+    if len(my_song_list(cfg['paths']['output'])) == num_songs:
+        info_log.info("Merge Successful")
+    else:
+        info_log.info("Merge Failed")
+
+
 if __name__ == "__main__":
     process(cfg['multithread']['status'])
+    merge(cfg)
