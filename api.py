@@ -83,17 +83,9 @@ class LangClassifier(metaclass=Singleton):
     def detect(self, txt):
         txt = ''.join(char for char in txt if char.isalpha() or char == " ")
         if txt != "":
-            try:
-                detector = Detector(txt)
-                if detector.reliable:
-                    lang = detector.language.name
-                else:
-                    raise polyglot.detect.base.UnknownLanguage
-            except polyglot.detect.base.UnknownLanguage:
-                lang = self.translate(txt)
+            lang = self.translate(txt)
             return lang
-        else:
-            raise ValueError
+        raise ValueError
 
     @sleep_and_retry
     @limits(calls=1, period=1)
@@ -103,13 +95,18 @@ class LangClassifier(metaclass=Singleton):
             google_translator = Translator()
             try:
                 return google_translator.detect(txt).lang
-            except json.decoder.JSONDecodeError as e:
+            except json.decoder.JSONDecodeError:
                 tries += 1
                 if tries == self._max_tries - 1:
-                    langs = detectlanguage.detect(txt)
-                    if langs:
-                        return langs[0]['language']
-                    else:
+                    try:
+                        langs = detectlanguage.detect(txt)
+                        if langs:
+                            return langs[0]['language']
+                        return "Unknown Language"
+                    except detectlanguage.exceptions.DetectLanguageError:
+                        detector = Detector(txt)
+                        if detector.reliable:
+                            return detector.language.name
                         return "Unknown Language"
                 time.sleep(1)
 
@@ -177,12 +174,3 @@ class Genius(metaclass=Singleton):
                 if tries == self._max_tries - 1:
                     return None
                 time.sleep(1)
-
-        """
-        if song is not None:
-            song.artist
-            song.title
-            song.year
-            song.featured_artists
-            song.media
-        """

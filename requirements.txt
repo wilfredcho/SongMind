@@ -8,7 +8,7 @@ PyYAML == 5.1.1
 # api.py: 4
 detectlanguage == 1.3.0
 
-# sort.py: 9
+# sort.py: 10
 eyeD3 == 0.8.10
 
 # common/util.py: 1
@@ -20,11 +20,14 @@ googletrans == 2.4.0
 # api.py: 5
 lyricsgenius == 1.5.2
 
-# sort.py: 10
+# sort.py: 11,14
+mutagen == 1.42.0
+
+# sort.py: 12
 numpy == 1.16.4
 
 # api.py: 6,10
-# sort.py: 11
+# sort.py: 13
 polyglot == 16.7.4
 
 # api.py: 7
@@ -36,5 +39,5 @@ ratelimit == 2.2.1
 # api.py: 8,12
 spotipy == 2.4.4
 
-# sort.py: 12
+# sort.py: 15
 tqdm == 4.32.2
