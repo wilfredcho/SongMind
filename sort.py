@@ -8,8 +8,10 @@ from pathlib import Path
 from shutil import copy
 
 import eyed3
+import mutagen
 import numpy as np
 import polyglot
+from mutagen.easyid3 import EasyID3
 from tqdm import tqdm
 
 from api import Counter, Genius, LangClassifier, LastFm, Spotify
@@ -92,14 +94,13 @@ def multithreading(func, jobs):
             copy_file(song_info)
 
 
-def details_from_lyrics(song):
-    title = song.tag.title
-    base_title = re.split(cfg['split'], song.tag.title)[0].strip()
-    details = genius.get_song(base_title, song.tag.artist)
+def details_from_lyrics(title, artist):
+    base_title = re.split(cfg['split'], title)[0].strip()
+    details = genius.get_song(base_title, artist)
     return details
 
 
-def get_language(song):
+def get_language(title, artist):
     def find_lang(details, alpha_title):
         if details is not None:
             try:
@@ -107,8 +108,8 @@ def get_language(song):
             except Exception:
                 return language.detect(alpha_title)
         return language.detect(alpha_title)
-    details = details_from_lyrics(song)
-    base_title = re.split(cfg['split'], song.tag.title)[0].strip()
+    details = details_from_lyrics(title, artist)
+    base_title = re.split(cfg['split'], title)[0].strip()
     alpha_title = ''.join(
         char for char in base_title if char.isalpha() or char == ' ').strip()
     try:
@@ -118,9 +119,9 @@ def get_language(song):
     return base_title, details, lang
 
 
-def get_genre(song, base_title, details, lang):
+def get_genre(artist, base_title, details, lang):
     if lang.lower() in language.english:
-        genre = lastfm.get_genre(song.tag.artist, base_title)
+        genre = lastfm.get_genre(artist, base_title)
         if genre:
             if genre[0].genre == 'Track not found'.lower() and details is not None:
                 spotify_data = [
@@ -133,7 +134,7 @@ def get_genre(song, base_title, details, lang):
                     if genres:
                         return [Genre(genres[0], 0)]
                 else:
-                    artist = spotify.search_artist(song.tag.artist)
+                    artist = spotify.search_artist(artist)
                     if artist['artists']['items']:
                         genres = artist['artists']['items'][0]['genres']
                         if genres:
@@ -145,7 +146,7 @@ def get_genre(song, base_title, details, lang):
                         if fuzzy_match(gen.genre, my_gen):
                             clean_genre.append(gen)
                 if not clean_genre:
-                    data = spotify.search_artist(song.tag.artist)
+                    data = spotify.search_artist(artist)
                     if data['artists']['total'] == 0:
                         clean_genre = [Genre(lang, 0)]
                     else:
@@ -162,18 +163,43 @@ def get_info(filename):
     try:
         song = eyed3.load(str(filename))
         if song_condit(song):
-            base_title, details, lang = get_language(song)
-            genre = get_genre(song, base_title, details, lang)
-            return SongInfo(song.tag.artist,
-                            song.tag.title,
+            title = song.tag.title
+            artist = song.tag.artist
+            base_title, details, lang = get_language(title, artist)
+            genre = get_genre(artist, base_title, details, lang)
+            return SongInfo(artist,
+                            title,
                             str(filename),
                             genre,
                             None,
                             None)
+        song = EasyID3(str(filename))
+        if song:
+            if all(meta in song.keys() for meta in ['title', 'artist']):
+                title = song['title'][0]
+                artist = song['artist'][0]
+                base_title, details, lang = get_language(title, artist)
+                # if 'genre' in song.keys():
+                #genre = song['genre'][0].lower().strip()
+                # else:
+                genre = get_genre(artist, base_title, details, lang)
+                return SongInfo(artist,
+                                title,
+                                str(filename),
+                                genre,
+                                None,
+                                None)
         return SongInfo(None,
                         None,
                         str(filename),
                         [Genre("Check Failed", 0)],
+                        None,
+                        None)
+    except mutagen.id3._util.ID3NoHeaderError:
+        return SongInfo(None,
+                        None,
+                        str(filename),
+                        [Genre("ID3NoHeader", 0)],
                         None,
                         None)
     except Exception as e:
