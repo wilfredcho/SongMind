@@ -14,11 +14,11 @@ import polyglot
 from mutagen.easyid3 import EasyID3
 from tqdm import tqdm
 
-from api import Counter, Genius, LangClassifier, LastFm, Spotify
+from organizer.api import Counter, Genius, LangClassifier, LastFm, Spotify
 from common.logger import getLogger, start_logger
 from common.util import fuzzy_match
-from config.configuration import Configuration
-from song import Genre, SongInfo
+from settings.configuration import Configuration
+from organizer.song import Genre, SongInfo
 
 start_logger()
 error_log = getLogger('error')
@@ -118,6 +118,9 @@ def get_language(title, artist):
         raise Exception('Title is not valid') from e
     return base_title, details, lang
 
+def artist_lang(artist):
+    return language.detect(artist)
+
 
 def get_genre(artist, base_title, details, lang):
     if lang.lower() in language.english:
@@ -165,7 +168,10 @@ def get_info(filename):
         if song_condit(song):
             title = song.tag.title
             artist = song.tag.artist
+            art_lang = artist_lang(artist)
             base_title, details, lang = get_language(title, artist)
+            if art_lang != language.english:
+                lang = art_lang
             genre = get_genre(artist, base_title, details, lang)
             return SongInfo(artist,
                             title,
@@ -173,15 +179,23 @@ def get_info(filename):
                             genre,
                             None,
                             None)
-        song = EasyID3(str(filename))
+        try:
+            song = EasyID3(str(filename))
+        except mutagen.id3._util.ID3NoHeaderError:
+            return SongInfo(None,
+                            None,
+                            str(filename),
+                            [Genre("ID3NoHeader", 0)],
+                            None,
+                            None)
         if song:
             if all(meta in song.keys() for meta in ['title', 'artist']):
                 title = song['title'][0]
                 artist = song['artist'][0]
+                art_lang = artist_lang(artist)
                 base_title, details, lang = get_language(title, artist)
-                # if 'genre' in song.keys():
-                #genre = song['genre'][0].lower().strip()
-                # else:
+                if art_lang != language.english:
+                    lang = art_lang
                 genre = get_genre(artist, base_title, details, lang)
                 return SongInfo(artist,
                                 title,
@@ -193,13 +207,6 @@ def get_info(filename):
                         None,
                         str(filename),
                         [Genre("Check Failed", 0)],
-                        None,
-                        None)
-    except mutagen.id3._util.ID3NoHeaderError:
-        return SongInfo(None,
-                        None,
-                        str(filename),
-                        [Genre("ID3NoHeader", 0)],
                         None,
                         None)
     except Exception as e:

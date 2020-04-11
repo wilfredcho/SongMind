@@ -6,13 +6,14 @@ import lyricsgenius
 import polyglot
 import pylast
 import spotipy
+import requests
 from googletrans import Translator
 from polyglot.detect import Detector
 from ratelimit import limits, sleep_and_retry
 from spotipy.oauth2 import SpotifyClientCredentials
 
 from common.singleton import Singleton
-from song import Genre
+from organizer.song import Genre
 
 
 class Counter(metaclass=Singleton):
@@ -72,6 +73,21 @@ class Spotify(metaclass=Singleton):
     def related_artists(self, track_id):
         return self.spotify.artist_related_artists(track_id)
 
+class LanguageLayer(metaclass=Singleton):
+
+    def __init__(self, cfg):
+        self.__access_key = cfg['languagelayer']['api_key']
+        self.__url = "http://api.languagelayer.com/detect"
+
+    def detect(self, txt):
+        query = {"access_key":self.__access_key,"query":txt}
+        response = requests.request("GET", self.__url, params=query)
+        if response.status_code == 200:
+            data = response.json()
+            if data['results']:
+                if data['results'][0]['reliable_result']:
+                    return data['results'][0]['language_code']
+        return "Unknown Language"
 
 class LangClassifier(metaclass=Singleton):
 
@@ -79,6 +95,7 @@ class LangClassifier(metaclass=Singleton):
         self.__english = ['en', 'english']
         self._max_tries = int(cfg['tries'])
         detectlanguage.configuration.api_key = cfg['detectlanguage']['api_key']
+        self.languagelayer = LanguageLayer(cfg)
 
     def detect(self, txt):
         txt = ''.join(char for char in txt if char.isalpha() or char == " ")
@@ -88,10 +105,13 @@ class LangClassifier(metaclass=Singleton):
         raise ValueError
 
     @sleep_and_retry
-    @limits(calls=1, period=1)
+    @limits(calls=1, period=4)
     def translate(self, txt):
         tries = 0
         while tries < self._max_tries:
+            detector = Detector(txt)
+            if detector.reliable:
+                return detector.language.name
             google_translator = Translator()
             try:
                 return google_translator.detect(txt).lang
@@ -102,12 +122,9 @@ class LangClassifier(metaclass=Singleton):
                         langs = detectlanguage.detect(txt)
                         if langs:
                             return langs[0]['language']
-                        return "Unknown Language"
+                        return self.languagelayer.detect(txt)
                     except detectlanguage.exceptions.DetectLanguageError:
-                        detector = Detector(txt)
-                        if detector.reliable:
-                            return detector.language.name
-                        return "Unknown Language"
+                        return self.languagelayer.detect(txt)
                 time.sleep(1)
 
     @property

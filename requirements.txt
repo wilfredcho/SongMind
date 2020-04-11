@@ -41,3 +41,14 @@ spotipy == 2.4.4
 
 # sort.py: 15
 tqdm == 4.32.2
+
+beautifulsoup4 == 4.6.3
+
+# sites/common/util.py: 11
+nltk == 3.4.5
+
+# Scraper.py: 7
+requests == 2.21.0
+
+# Scraper.py: 9
+selenium == 3.141.0
