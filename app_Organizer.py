@@ -1,193 +1,264 @@
-import json
-import time
+import concurrent.futures
+import os
+import re
+import shutil
+from filecmp import cmp
+from os.path import isfile
+from pathlib import Path
+from shutil import copy
 
-import detectlanguage
-import lyricsgenius
+import eyed3
+import mutagen
+import numpy as np
 import polyglot
-import pylast
-import spotipy
-import requests
-from googletrans import Translator
-from polyglot.detect import Detector
-from ratelimit import limits, sleep_and_retry
-from spotipy.oauth2 import SpotifyClientCredentials
+from mutagen.easyid3 import EasyID3
+from tqdm import tqdm
 
-from common.singleton import Singleton
-from song import Genre
+from organizer.api import Counter, Genius, LangClassifier, LastFm, Spotify
+from common.logger import getLogger, start_logger
+from common.util import fuzzy_match
+from settings.configuration import Configuration
+from organizer.song import Genre, SongInfo
 
+start_logger()
+error_log = getLogger('error')
+info_log = getLogger('info')
 
-class Counter(metaclass=Singleton):
-    def __init__(self, count):
-        self.count = count
+cfg = Configuration().cfg
 
-    @property
-    def count(self):
-        return self.__count
+lastfm = LastFm(cfg)
+genius = Genius(cfg)
+spotify = Spotify(cfg)
+language = LangClassifier(cfg)
 
-    @count.setter
-    def count(self, value):
-        self.__count = value
+counter = Counter(0)
 
 
-class Spotify(metaclass=Singleton):
-    def __init__(self, cfg):
-        self.spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials(
-            client_id=cfg["spotify"]["client_id"],
-            client_secret=cfg["spotify"]["client_secret"]
-        )
-        )
+def song_condit(song):
+    if song is not None:
+        if song.tag is not None:
+            if song.tag.artist is not None and song.tag.title is not None:
+                if song.tag.artist != '' and song.tag.title != '':
+                    return True
+    return False
 
-    @sleep_and_retry
-    @limits(calls=5, period=1)
-    def get_track(self, track_id):
-        return self.spotify.track(track_id)
 
-    @sleep_and_retry
-    @limits(calls=5, period=1)
-    def get_artist(self, artist_id):
-        return self.spotify.artist(artist_id)
+def duplicate_files(copy_path, song_info, dup):
+    if not os.path.exists(copy_path):
+        os.makedirs(copy_path)
+    copy_file = copy_path + os.path.basename(str(song_info.filename))
+    if os.path.exists(copy_file):
+        if cmp(song_info.filename, copy_file):
+            if dup == '':
+                dup = 0
+            duplicate_files(copy_path + '_' + str(dup+1), song_info, dup+1)
+        else:
+            info_log.info("Remove Identitcal File: " + str(song_info.filename))
+            counter.count += 1
+    else:
+        copy(song_info.filename, copy_path)
 
-    @sleep_and_retry
-    @limits(calls=5, period=1)
-    def search_track(self, track, artist):
-        # data['tracks']['items']
-        return self.spotify.search(q='artist:' + artist + ' track:' + track, type='track')
 
-    @sleep_and_retry
-    @limits(calls=5, period=1)
-    def search_artist(self, artist):
-        return self.spotify.search(q='artist:' + artist, type='artist')
+def copy_file(song_info):
+    copy_path = cfg['paths']['output']+song_info.max_genre.genre.lower()+"/"
+    duplicate_files(copy_path, song_info, '')
 
-    @sleep_and_retry
-    @limits(calls=5, period=1)
-    def audio_analysis(self, track_id):
-        return self.spotify.audio_analysis(track_id)
 
-    @sleep_and_retry
-    @limits(calls=5, period=1)
-    def audio_features(self, track_id):
-        return self.spotify.audio_features([track_id])
+def process(MULTI=False):
+    jobs = my_song_list(cfg['paths']['input'])
+    if MULTI:
+        multithreading(get_info, jobs)
+    else:
+        for job in tqdm(jobs, total=len(jobs), unit="job"):
+            song_info = get_info(job)
+            copy_file(song_info)
 
-    @sleep_and_retry
-    @limits(calls=5, period=1)
-    def related_artists(self, track_id):
-        return self.spotify.artist_related_artists(track_id)
+    outputs = my_song_list(cfg['paths']['output'])
+    jobs = [os.path.basename(job) for job in jobs]
+    outputs = [os.path.basename(output) for output in outputs]
+    if len(jobs) == (len(outputs) + counter.count):
+        info_log.info("Process Successful")
+    else:
+        info_log.info("Process Failed: ")
+        info_log.info("Duplicates: " + str(counter.count))
+        info_log.info("Difference: " + str(set(jobs) - set(outputs)))
+        info_log.info("Duplicates: " + str(counter.count))
 
-class LanguageLayer(metaclass=Singleton):
 
-    def __init__(self, cfg):
-        self.__access_key = cfg['languagelayer']['api_key']
-        self.__url = "http://api.languagelayer.com/detect"
+def multithreading(func, jobs):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=int(cfg['multithread']['workers'])) as executor:
+        future_job = (executor.submit(
+            func, job) for job in jobs)
+        for future in tqdm(concurrent.futures.as_completed(future_job), total=len(jobs), unit="job"):
+            song_info = future.result()
+            copy_file(song_info)
 
-    def detect(self, txt):
-        query = {"access_key":self.__access_key,"query":txt}
-        response = requests.request("GET", self.__url, params=query)
-        if response.status_code == 200:
-            data = response.json()
-            if data['results']:
-                if data['results'][0]['reliable_result']:
-                    return data['results'][0]['language_code']
-        return "Unknown Language"
 
-class LangClassifier(metaclass=Singleton):
+def details_from_lyrics(title, artist):
+    base_title = re.split(cfg['split'], title)[0].strip()
+    details = genius.get_song(base_title, artist)
+    return details
 
-    def __init__(self, cfg):
-        self.__english = ['en', 'english']
-        self._max_tries = int(cfg['tries'])
-        detectlanguage.configuration.api_key = cfg['detectlanguage']['api_key']
-        self.languagelayer = LanguageLayer(cfg)
 
-    def detect(self, txt):
-        txt = ''.join(char for char in txt if char.isalpha() or char == " ")
-        if txt != "":
-            lang = self.translate(txt)
-            return lang
-        raise ValueError
-
-    @sleep_and_retry
-    @limits(calls=1, period=4)
-    def translate(self, txt):
-        tries = 0
-        while tries < self._max_tries:
-            detector = Detector(txt)
-            if detector.reliable:
-                return detector.language.name
-            google_translator = Translator()
+def get_language(title, artist):
+    def find_lang(details, alpha_title):
+        if details is not None:
             try:
-                return google_translator.detect(txt).lang
-            except json.decoder.JSONDecodeError:
-                tries += 1
-                if tries == self._max_tries - 1:
-                    try:
-                        langs = detectlanguage.detect(txt)
-                        if langs:
-                            return langs[0]['language']
-                        return self.languagelayer.detect(txt)
-                    except detectlanguage.exceptions.DetectLanguageError:
-                        return self.languagelayer.detect(txt)
-                time.sleep(1)
-
-    @property
-    def english(self):
-        return self.__english
-
-    @property
-    def error(self):
-        return polyglot.detect.base.UnknownLanguage
-
-
-class LastFm(metaclass=Singleton):
-
-    def __init__(self, cfg):
-        self.lasffm = pylast.LastFMNetwork(api_key=cfg["lastFM"]["api_key"])
-        self._max_tries = int(cfg['tries'])
-
-    @sleep_and_retry
-    @limits(calls=5, period=1)
-    def get_genre(self, artist, title):
-        info = self.lasffm.get_track(artist, title)
-        tries = 0
-        while tries < self._max_tries:
-            try:
-                genre = info.get_top_tags()
-                break
-            except pylast.WSError as e:
-                return [Genre(e.details, 0)]
-            except pylast.MalformedResponseError as e:
-                tries += 1
-                if tries == self._max_tries - 1:
-                    return [Genre(str(e), 0)]
-                time.sleep(1)
-            except pylast.NetworkError as e:
-                tries += 1
-                if tries == self._max_tries - 1:
-                    return [Genre(str(e), 0)]
-                time.sleep(1)
-        genre_array = (Genre(gen.item.get_name(), int(gen.weight))
-                       for gen in genre)
-        return [gen for gen in genre_array]  # [0].genre == 'Track not found'
-
-
-class Genius(metaclass=Singleton):
-
-    def __init__(self, cfg):
-        self.genius = lyricsgenius.Genius(cfg["genius"]["user_token"])
-        self._max_tries = int(cfg['tries'])
-
-    @sleep_and_retry
-    @limits(calls=5, period=1)
-    def get_song(self, title, artist):
-        if title is None or artist is None:
-            return None
-        if title == "" or artist == "":
-            return None
-        tries = 0
-        while tries < self._max_tries:
-            try:
-                song = self.genius.search_song(title, artist)
-                return song
+                return language.detect(details.lyrics)
             except Exception:
-                tries += 1
-                if tries == self._max_tries - 1:
-                    return None
-                time.sleep(1)
+                return language.detect(alpha_title)
+        return language.detect(alpha_title)
+    details = details_from_lyrics(title, artist)
+    base_title = re.split(cfg['split'], title)[0].strip()
+    alpha_title = ''.join(
+        char for char in base_title if char.isalpha() or char == ' ').strip()
+    try:
+        lang = find_lang(details, alpha_title)
+    except ValueError as e:
+        raise Exception('Title is not valid') from e
+    return base_title, details, lang
+
+def artist_lang(artist):
+    return language.detect(artist)
+
+
+def get_genre(artist, base_title, details, lang):
+    if lang.lower() in language.english:
+        genre = lastfm.get_genre(artist, base_title)
+        if genre:
+            if genre[0].genre == 'Track not found'.lower() and details is not None:
+                spotify_data = [
+                    data for data in details.media if data['provider'] == 'spotify']
+                if spotify_data:
+                    spotify_data = spotify_data[0]
+                    track = spotify.get_track(spotify_data['native_uri'])
+                    artist = spotify.get_artist(track['artists'][0]['uri'])
+                    genres = artist['genres']
+                    if genres:
+                        return [Genre(genres[0], 0)]
+                else:
+                    artist = spotify.search_artist(artist)
+                    if artist['artists']['items']:
+                        genres = artist['artists']['items'][0]['genres']
+                        if genres:
+                            return [Genre(genres[0], 0)]
+            else:
+                clean_genre = []
+                for gen in genre:
+                    for my_gen in cfg['genre']['main']:
+                        if fuzzy_match(gen.genre, my_gen):
+                            clean_genre.append(gen)
+                if not clean_genre:
+                    data = spotify.search_artist(artist)
+                    if data['artists']['total'] == 0:
+                        clean_genre = [Genre(lang, 0)]
+                    else:
+                        genres = data['artists']['items'][0]['genres']
+                        if genres:
+                            clean_genre = [Genre(genres[0], 0)]
+                        else:
+                            clean_genre = [Genre(lang, 0)]
+                return clean_genre
+    return [Genre(lang, 0)]
+
+
+def get_info(filename):
+    try:
+        song = eyed3.load(str(filename))
+        if song_condit(song):
+            title = song.tag.title
+            artist = song.tag.artist
+            art_lang = artist_lang(artist)
+            base_title, details, lang = get_language(title, artist)
+            if art_lang != language.english:
+                lang = art_lang
+            genre = get_genre(artist, base_title, details, lang)
+            return SongInfo(artist,
+                            title,
+                            str(filename),
+                            genre,
+                            None,
+                            None)
+        try:
+            song = EasyID3(str(filename))
+        except mutagen.id3._util.ID3NoHeaderError:
+            return SongInfo(None,
+                            None,
+                            str(filename),
+                            [Genre("ID3NoHeader", 0)],
+                            None,
+                            None)
+        if song:
+            if all(meta in song.keys() for meta in ['title', 'artist']):
+                title = song['title'][0]
+                artist = song['artist'][0]
+                art_lang = artist_lang(artist)
+                base_title, details, lang = get_language(title, artist)
+                if art_lang != language.english:
+                    lang = art_lang
+                genre = get_genre(artist, base_title, details, lang)
+                return SongInfo(artist,
+                                title,
+                                str(filename),
+                                genre,
+                                None,
+                                None)
+        return SongInfo(None,
+                        None,
+                        str(filename),
+                        [Genre("Check Failed", 0)],
+                        None,
+                        None)
+    except Exception as e:
+        error_log.exception(str(filename))
+        return SongInfo(None,
+                        None,
+                        str(filename),
+                        [Genre(str(e), 0)],
+                        None,
+                        None)
+
+
+def my_song_list(path):
+    jobs = list(Path(path).glob('**/*.*'))
+    file_jobs = [job for job in jobs
+                 if isfile(job) and os.path.basename(job).split('.')[0] != '']
+    return file_jobs
+
+
+def move_dir(source_folder, dest):
+    files = os.listdir(source_folder)
+    os.makedirs(os.path.dirname(source_folder)+'/'+dest, exist_ok=True)
+    for f in files:
+        dest_name = os.path.dirname(source_folder)+'/'+dest+'/'+f
+        while True:
+            i = 0
+            if os.path.exists(dest_name):
+                dest_name = os.path.splitext(
+                    dest_name)[0] + str(i) + os.path.splitext(dest_name)[1]
+                i += 1
+            else:
+                shutil.move(source_folder+'/'+f, dest_name)
+                break
+
+
+def merge(cfg):
+    num_songs = len(my_song_list(cfg['paths']['output']))
+    folders = list(filter(os.path.isdir, [
+                   cfg['paths']['output'] + path for path in os.listdir(cfg['paths']['output'])]))
+    genre_map = cfg['genre']['pair']
+    for source_folder in folders:
+        genre = os.path.basename(source_folder)
+        if genre in genre_map.keys():
+            move_dir(source_folder, genre_map[genre])
+            os.rmdir(os.path.dirname(source_folder)+'/'+genre)
+
+    if len(my_song_list(cfg['paths']['output'])) == num_songs:
+        info_log.info("Merge Successful")
+    else:
+        info_log.info("Merge Failed")
+
+
+if __name__ == "__main__":
+    process(cfg['multithread']['status'])
+    merge(cfg)

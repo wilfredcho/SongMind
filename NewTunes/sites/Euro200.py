@@ -1,7 +1,7 @@
 import itertools
 
-from NewTunes.sites.Base import Base
-from NewTunes.sites.common.util import format_text, proc_info
+from newtunes.sites.Base import Base
+from newtunes.sites.common.util import format_text, proc_info
 
 
 class Euro200(Base):

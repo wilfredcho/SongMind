@@ -2,9 +2,9 @@ import re
 
 from fuzzywuzzy import fuzz
 
-import NewTunes.sites.common.compare as compare
-from NewTunes import config as constants
-from NewTunes.sites.common.Info import Info
+import newtunes.sites.common.compare as compare
+from newtunes import config as constants
+from newtunes.sites.common.Info import Info
 
 from nltk import word_tokenize
 

@@ -5,7 +5,7 @@ from logging.handlers import RotatingFileHandler
 
 import yaml
 
-from config.configuration import Configuration
+from settings.configuration import Configuration
 
 cfg = Configuration().cfg
 

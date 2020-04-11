@@ -1,6 +1,6 @@
 from fuzzywuzzy import fuzz
 
-from config.configuration import Configuration
+from settings.configuration import Configuration
 
 cfg = Configuration().cfg
 

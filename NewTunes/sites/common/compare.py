@@ -1,4 +1,4 @@
-from NewTunes import config as constants
+from newtunes import config as constants
 
 
 def reenter(info, val):

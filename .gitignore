@@ -107,5 +107,5 @@ venv.bak/
 /.DS_Store
 /Music
 /Copy
-/config
+/settings/config.yml
 /db/tmp/

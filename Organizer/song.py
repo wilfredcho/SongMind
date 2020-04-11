@@ -1,7 +1,7 @@
 from operator import attrgetter
 
 from common.util import fuzzy_match
-from config.configuration import Configuration
+from settings.configuration import Configuration
 
 cfg = Configuration().cfg
 

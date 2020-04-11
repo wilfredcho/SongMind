@@ -8,9 +8,9 @@ import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
 
-import NewTunes.config as constants
+import newtunes.config as constants
 from .config import VISITED_SONGS
-from NewTunes.sites import *
+from newtunes.sites import *
 
 logger = logging.getLogger('process')
 
@@ -44,7 +44,7 @@ class Scraper(object):
         setattr(self.chart, 'dislike_artist', constants.DISLIKE_ARTIST)
         setattr(self.chart, 'dislike_title', constants.DISLIKE_TITLE)
         setattr(self, 'run', getattr(import_module(
-            'NewTunes.sites.' + self.chart.site), self.chart.site)().run)
+            'newtunes.sites.' + self.chart.site), self.chart.site)().run)
         setattr(self.chart, 'old_songs', FILES.old_songs)
 
     def _get_page(self):

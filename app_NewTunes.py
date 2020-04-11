@@ -6,13 +6,13 @@ import time
 from datetime import datetime
 from os.path import isfile, exists
 
-import NewTunes.charts as charts
-from NewTunes.ChartCSS import ChartCss
-from NewTunes.config import LOG_NAME, MULTIPROC, VISITED_SONGS
-from NewTunes.Scraper import Scraper
-from NewTunes.sites.common.util import fuzzy_match
-from NewTunes.tool.llist import LinkedList
-from NewTunes.tool.logger import setup_logger
+import newtunes.charts as charts
+from newtunes.ChartCSS import ChartCss
+from newtunes.config import LOG_NAME, MULTIPROC, VISITED_SONGS
+from newtunes.Scraper import Scraper
+from newtunes.sites.common.util import fuzzy_match
+from newtunes.tool.llist import LinkedList
+from newtunes.tool.logger import setup_logger
 
 setup_logger(LOG_NAME)
 LOGGER = logging.getLogger(LOG_NAME)
@@ -88,7 +88,6 @@ def entry():
             new_list = get_chart(chart)
             if new_list:
                 new_songs.extend(new_list)
-
     if proceed:
         new_songs = remove_duplicate(new_songs)
         to_file(new_songs)
