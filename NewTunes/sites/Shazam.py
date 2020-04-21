@@ -1,10 +1,10 @@
 from newtunes.sites.Base import Base
 from newtunes.sites.common.util import format_text, proc_info
-
+import string
 
 class Shazam(Base):
     def proc_row(self, row, chart):
-        cur_pos = format_text(row.find("span", {"class": "number"}).text)
+        cur_pos = ''.join(char for char in format_text(row.find("div", {"class": "flex-reset number"}).text) if char not in set(string.punctuation))
         last_pos = chart.condit['enter'] + 1
         title = format_text(row.find("div", {"class": "title"}).text)
         artist = format_text(row.find("div", {"class": "artist"}).text)
