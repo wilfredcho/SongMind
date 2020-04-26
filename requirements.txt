@@ -2,53 +2,73 @@
 # https://github.com/damnever/pigar
 
 # common/logger.py: 6
-# config/configuration.py: 1
-PyYAML == 5.1.1
+# settings/configuration.py: 1
+PyYAML == 5.1.2
 
-# api.py: 4
+# newtunes/Scraper.py: 8
+beautifulsoup4 == 4.6.0
+
+# organizer/api.py: 4
 detectlanguage == 1.3.0
 
-# sort.py: 10
+# app_Organizer.py: 10
 eyeD3 == 0.8.10
 
 # common/util.py: 1
+# newtunes/sites/common/util.py: 3
 fuzzywuzzy == 0.17.0
 
-# api.py: 9
+# organizer/api.py: 10
 googletrans == 2.4.0
 
-# api.py: 5
-lyricsgenius == 1.5.2
+# organizer/api.py: 5
+lyricsgenius == 1.7.0
 
-# sort.py: 11,14
+# common/util.py: 12
+matplotlib == 3.1.1
+
+# app_Organizer.py: 11,14
 mutagen == 1.42.0
 
-# sort.py: 12
-numpy == 1.16.4
-
-# api.py: 6,10
-# sort.py: 13
-polyglot == 16.7.4
-
-# api.py: 7
-pylast == 3.1.0
-
-# api.py: 11
-ratelimit == 2.2.1
-
-# api.py: 8,12
-spotipy == 2.4.4
-
-# sort.py: 15
-tqdm == 4.32.2
-
-beautifulsoup4 == 4.6.3
-
-# sites/common/util.py: 11
+# common/util.py: 16,17
+# newtunes/sites/common/util.py: 9
 nltk == 3.4.5
 
-# Scraper.py: 7
-requests == 2.21.0
+# app_Organizer.py: 12
+# common/util.py: 13
+numpy == 1.17.3
 
-# Scraper.py: 9
+# common/util.py: 14
+pandas == 0.25.3
+
+# app_Organizer.py: 13
+# organizer/api.py: 6,11
+polyglot == 16.7.4
+
+# organizer/api.py: 7
+pylast == 3.1.0
+
+# organizer/api.py: 12
+ratelimit == 2.2.1
+
+# newtunes/Scraper.py: 7
+# organizer/api.py: 9
+requests == 2.22.0
+
+# common/util.py: 15
+seaborn == 0.9.0
+
+# newtunes/Scraper.py: 9
 selenium == 3.141.0
+
+# common/util.py: 18
+sklearn == 0.0
+
+# organizer/api.py: 8,13
+spotipy == 2.4.4
+
+# app_Organizer.py: 15
+tqdm == 4.38.0
+
+# common/util.py: 19
+wordcloud == 1.5.0
