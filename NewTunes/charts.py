@@ -1,12 +1,5 @@
 Charts = [
 
-    {"site": "Billboard",
-     "js": True,
-     "url": "https://www.billboard.com/charts/billboard-china-social-chart",
-     "condit": {"reenter": False,
-                "enter": 25}
-     },
-
     {"site": "Shazam",
      "js": True,
      "url": "https://www.shazam.com/charts/top-200/romania",
