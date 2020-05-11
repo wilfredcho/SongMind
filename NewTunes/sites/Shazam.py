@@ -5,7 +5,7 @@ import string
 class Shazam(Base):
     def proc_row(self, row, chart):
         cur_pos = ''.join(char for char in format_text(row.find("div", {"class": "flex-reset number"}).text) if char not in set(string.punctuation))
-        last_pos = chart.condit['enter'] + 1
+        last_pos = chart.max + 1
         title = format_text(row.find("div", {"class": "title"}).text)
         artist = format_text(row.find("div", {"class": "artist"}).text)
         return proc_info(chart, cur_pos, last_pos, title, artist)

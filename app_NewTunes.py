@@ -29,6 +29,8 @@ def get_chart(visits):
 
 
 def remove_duplicate(song_list):
+    if len(song_list) == 1:
+        return song_list
     if song_list:
         llist = LinkedList(song_list)
         song = llist.head
