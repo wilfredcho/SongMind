@@ -66,7 +66,7 @@ class Scraper(object):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             time.sleep(2)
             new_height = driver.execute_script("return document.body.scrollHeight")
-            if new_height == last_height:
+            if new_height >= last_height:
                 break
 
         time.sleep(constants.WAIT)

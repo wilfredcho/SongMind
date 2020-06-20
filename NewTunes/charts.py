@@ -1,4 +1,20 @@
 Charts = [
+    
+    {"site": "Shazam",
+     "js": True,
+     "url": "https://www.shazam.com/charts/top-200/egypt",
+     "condit": {"reenter": False},
+                #"enter": 25},
+     "max": 50
+     },
+
+    {"site": "Shazam",
+     "js": True,
+     "url": "https://www.shazam.com/charts/top-200/israel",
+     "condit": {"reenter": False},
+                #"enter": 25},
+     "max": 50
+     },
 
     {"site": "Shazam",
      "js": True,
@@ -85,13 +101,6 @@ Charts = [
      "url": "https://dutchcharts.nl/weekchart.asp?cat=s",
      "condit": {"reenter": False},
                 #"enter": 20}
-     },
-
-    {"site": "Billboard100",
-     "js": True,
-     "url": "https://www.billboard.com/charts/hot-100",
-     "condit": {"reenter": False},
-                #"enter": 50}
      },
 
     {"site": "Billboard",
