@@ -77,11 +77,11 @@ class Scraper(object):
     def process(self):
         self.page = self._get_page()
         if self.page.status_code == constants.OK:
-            if self.chart.js:
-                soup = self._make_js_soup()
-            else:
-                soup = self._make_soup()
             try:
+                if self.chart.js:
+                    soup = self._make_js_soup()
+                else:
+                    soup = self._make_soup()
                 return self.run(soup, self.chart)
             except Exception:
                 logging.error("Failed to visit " +
