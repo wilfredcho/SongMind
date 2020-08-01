@@ -68,6 +68,20 @@ Charts = [
                 #"enter": 50}
      },
 
+    {"site": "Acharts",
+     "js": False,
+     "url": "https://acharts.co/portugal_singles_top_50",
+     "condit": {"reenter": False},
+                #"enter": 50}
+     },
+
+    {"site": "Acharts",
+     "js": False,
+     "url": "https://acharts.co/bulgaria_singles_top_40",
+     "condit": {"reenter": False},
+                #"enter": 50}
+    },
+
     {"site": "AriaCharts",
      "js": False,
      "url": "https://www.ariacharts.com.au/charts/singles-chart",
@@ -110,12 +124,12 @@ Charts = [
                 #"enter": 25}
      },
 
-    {"site": "Billboard",
-     "js": True,
-     "url": "https://www.billboard.com/charts/rock-songs",
-     "condit": {"reenter": False},
-                #"enter": 25}
-     },
+    # {"site": "Billboard",
+    #  "js": True,
+    #  "url": "https://www.billboard.com/charts/rock-songs",
+    #  "condit": {"reenter": False},
+    #             #"enter": 25}
+    #  },
 
     {"site": "Billboard",
      "js": True,
@@ -124,12 +138,12 @@ Charts = [
                 #"enter": 25}
      },
 
-    {"site": "Billboard",
-     "js": True,
-     "url": "https://www.billboard.com/charts/r-b-hip-hop-songs",
-     "condit": {"reenter": False},
-                #"enter": 25}
-     },
+    # {"site": "Billboard",
+    #  "js": True,
+    #  "url": "https://www.billboard.com/charts/r-b-hip-hop-songs",
+    #  "condit": {"reenter": False},
+    #             #"enter": 25}
+    #  },
 
     {"site": "Billboard",
      "js": True,
@@ -152,12 +166,12 @@ Charts = [
                 "enter": 25}
      },
 
-    {"site": "Billboard",
-     "js": True,
-     "url": "https://www.billboard.com/charts/dance-club-play-songs",
-     "condit": {"reenter": False},
-                #"enter": 25}
-     },
+    # {"site": "Billboard",
+    #  "js": True,
+    #  "url": "https://www.billboard.com/charts/dance-club-play-songs",
+    #  "condit": {"reenter": False},
+    #             #"enter": 25}
+    #  },
 
     {"site": "Billboard",
      "js": True,
@@ -239,32 +253,6 @@ Charts = [
                 #"enter": 50},
      "start_row": 4,
      "end_row": 29,
-     "cur_pos": 1,
-     "last_pos": 2,
-     "artist_title": 4,
-     "offset": [0, 6],
-     },
-
-    {"site": "Euro200",
-     "js": False,
-     "url": "https://euro200.net/Portugal-Top50.htm",
-     "condit": {"reenter": False},
-                #"enter": 50},
-     "start_row": 4,
-     "end_row": 29,
-     "cur_pos": 1,
-     "last_pos": 2,
-     "artist_title": 4,
-     "offset": [0, 6],
-     },
-
-    {"site": "Euro200",
-     "js": False,
-     "url": "https://euro200.net/Bulgarije-top-40.htm",
-     "condit": {"reenter": False},
-                #"enter": 40},
-     "start_row": 3,
-     "end_row": 23,
      "cur_pos": 1,
      "last_pos": 2,
      "artist_title": 4,
