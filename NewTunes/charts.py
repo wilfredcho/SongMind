@@ -84,7 +84,7 @@ Charts = [
 
     {"site": "AriaCharts",
      "js": False,
-     "url": "https://www.ariacharts.com.au/charts/singles-chart",
+     "url": "https://www.aria.com.au/charts/singles-chart",
      "condit": {"reenter": False},
                 #"enter": 50}
      },
@@ -187,12 +187,12 @@ Charts = [
                 #"enter": 50}
      },
 
-    {"site": "Billboard",
-     "js": True,
-     "url": "https://www.billboard.com/charts/billboard-korea-k-pop-100",
-     "condit": {"reenter": False},
-                #"enter": 50}
-     },
+    # {"site": "Billboard",
+    #  "js": True,
+    #  "url": "https://www.billboard.com/charts/billboard-korea-k-pop-100",
+    #  "condit": {"reenter": False},
+    #             #"enter": 50}
+    #  },
     
     {"site": "Euro200",
      "js": False,
